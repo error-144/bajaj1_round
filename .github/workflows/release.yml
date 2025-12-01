@@ -1,0 +1,63 @@
+name: Build and Release JAR
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        
+    - name: Cache Maven packages
+      uses: actions/cache@v3
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+        restore-keys: ${{ runner.os }}-m2
+        
+    - name: Build with Maven
+      run: mvn clean package -DskipTests
+      
+    - name: Create Release
+      id: create_release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ github.ref }}
+        name: Release ${{ github.ref }}
+        draft: false
+        prerelease: false
+        files: target/bajaj-fin-round1-1.0.0.jar
+        body: |
+          ## BFHL Java Webhook Client
+          
+          This release contains the compiled JAR file for the BFHL hiring test webhook client.
+          
+          ### Features:
+          - Embedded SQL query solution
+          - JWT authentication
+          - Self-contained executable JAR
+          
+          ### Usage:
+          ```bash
+          java -jar bajaj-fin-round1-1.0.0.jar
+          ```
+          
+          ### What it does:
+          1. Sends your SQL query to the BFHL webhook endpoint
+          2. Uses embedded JWT for authentication
+          3. Returns the server response and HTTP status 
